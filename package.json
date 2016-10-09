@@ -1,0 +1,46 @@
+{
+  "name": "github-explorer-electron",
+  "productName": "Github Explorer",
+  "version": "0.0.1",
+  "description": "",
+  "license": "MIT",
+  "repository": "user/repo",
+  "author": {
+    "name": "",
+    "email": "",
+    "url": ""
+  },
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-packager . --out=dist --asar --overwrite --all"
+  },
+  "files": [
+    "index.js",
+    "index.html",
+    "index.css"
+  ],
+  "keywords": [
+    "electron-app",
+    "electron"
+  ],
+  "dependencies": {
+    "bluebird": "3.4.6",
+    "electron-debug": "^1.0.0",
+    "lodash": "4.16.4",
+    "menubar": "5.1.0",
+    "node-notifier": "4.6.1",
+    "octonode": "0.7.6"
+  },
+  "devDependencies": {
+    "devtron": "^1.4.0",
+    "electron-packager": "^8.1.0",
+    "electron": "^1.4.3"
+  },
+  "xo": {
+    "esnext": true,
+    "envs": [
+      "node",
+      "browser"
+    ]
+  }
+}
