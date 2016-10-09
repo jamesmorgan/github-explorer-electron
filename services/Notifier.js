@@ -4,6 +4,9 @@ const _ = require('lodash');
 class Notifier {
 
 	fireNotification(options) {
+		_.defaults(options, {
+			title: 'Github Explorer'
+		});
 		notifier.notify(options);
 	}
 }

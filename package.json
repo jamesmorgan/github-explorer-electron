@@ -1,10 +1,10 @@
 {
   "name": "github-explorer-electron",
-  "productName": "Github Explorer",
+  "productName": "Github Explorer Electron",
   "version": "0.0.1",
-  "description": "",
+  "description": "Cross platform github integration in your desktop menu bar!",
   "license": "MIT",
-  "repository": "user/repo",
+  "repository": "https://github.com/jamesmorgan/github-explorer-electron",
   "author": {
     "name": "",
     "email": "",
@@ -25,7 +25,7 @@
   ],
   "dependencies": {
     "bluebird": "3.4.6",
-    "electron-debug": "^1.0.0",
+    "electron-debug": "1.0.1",
     "lodash": "4.16.4",
     "menubar": "5.1.0",
     "node-notifier": "4.6.1",

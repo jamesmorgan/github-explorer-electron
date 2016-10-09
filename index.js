@@ -5,10 +5,12 @@ const shell = electron.shell;
 const menubar = require('menubar');
 const _ = require('lodash');
 
-const {Menu, MenuItem} = require('electron');
+const {app, Menu, MenuItem} = require('electron');
 
-const app = electron.app;
+// const app = electron.app;
 const mb = menubar();
+
+require('electron-debug')({showDevTools: true});
 
 // adds debug features like hotkeys for triggering dev tools and reload
 require('electron-debug')();
@@ -62,7 +64,27 @@ mb.on('ready', function ready() {
 	}));
 	mb.tray.setContextMenu(menu);
 
+	menu.append(new MenuItem({type: 'separator'}));
+
 	github.findRepos().then((function (repos) {
+
+		var menu = new Menu();
+
+		menu.append(new MenuItem({
+			label: 'Github Home',
+			click: function () {
+				console.log('github home clicked'); // TODO
+			}
+		}));
+
+		menu.append(new MenuItem({
+			label: 'Create Gits',
+			click: function () {
+				console.log('create gist clicked'); // TODO
+			}
+		}));
+
+		menu.append(new MenuItem({type: 'separator'}));
 
 		_.forEach(repos, (repo) => {
 			console.log('adding repo - ' + repo.name);
@@ -73,13 +95,35 @@ mb.on('ready', function ready() {
 					shell.openExternal(repo.html_url);
 				}
 			}));
-
 		});
 
 		notifier.fireNotification({
-			title: 'github explorer',
 			message: 'completed github repo lookup'
 		});
+
+		menu.append(new MenuItem({type: 'separator'}));
+
+		menu.append(new MenuItem({
+			label: 'Configure',
+			click: function () {
+				console.log('Configure clicked'); // TODO launch configure.html
+			}
+		}));
+
+		menu.append(new MenuItem({
+			label: 'About',
+			click: function () {
+				console.log('about clicked'); // TODO launch about.html
+			}
+		}));
+
+		//Clicking this option quits the soundcast app
+		menu.append(new MenuItem({
+			label: 'Quit',
+			click: function () {
+				mb.app.quit();
+			}
+		}));
 
 		//Enable the tray
 		mb.tray.setContextMenu(menu);
