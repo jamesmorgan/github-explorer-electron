@@ -8,7 +8,11 @@ const _ = require('lodash');
 const {app, Menu, MenuItem} = require('electron');
 
 // const app = electron.app;
-const mb = menubar();
+const mb = menubar({
+	tooltip: 'Github Explorer',
+	icon: 'resources/tray/icon.png',
+	showOnRightClick: false
+});
 
 require('electron-debug')({showDevTools: true});
 
@@ -48,6 +52,10 @@ var onExitHandler = () => {
 };
 app.on('window-all-closed', onExitHandler);
 
+var notification_triggers = {
+	successfully_connected: false
+};
+
 mb.on('ready', function ready() {
 	console.log('app is ready');
 
@@ -57,25 +65,41 @@ mb.on('ready', function ready() {
 	}));
 	mb.tray.setContextMenu(menu);
 
-	menu.append(new MenuItem({type: 'separator'}));
+	function addDefaultBottomMenus(menu) {
+		menu.append(new MenuItem({type: 'separator'}));
+		menu.append(new MenuItem({
+			label: 'Configure',
+			click: () => createMainWindow("settings")
+		}));
+		menu.append(new MenuItem({
+			label: 'About',
+			click: () => createMainWindow("about")
+		}));
+		menu.append(new MenuItem({
+			label: 'Quit',
+			click: onExitHandler
+		}));
+	}
+
+	function addDefaultTopMenus(menu) {
+		menu.append(new MenuItem({
+			label: 'Github Home',
+			click: () => shell.openExternal(`https://github.com/${github.username}`)
+		}));
+		menu.append(new MenuItem({
+			label: 'Create Gits',
+			click: () => shell.openExternal(`https://gist.github.com`)
+		}));
+		menu.append(new MenuItem({type: 'separator'}));
+	}
 
 	var triggerGithubScheduler = function () {
 		gitHubLookupScheduler.startTicker(function () {
-			github.findRepos().then((function (repos) {
+
+			var handleSuccess = function (repos) {
 
 				var menu = new Menu();
-
-				menu.append(new MenuItem({
-					label: 'Github Home',
-					click: () => shell.openExternal(`https://github.com/${github.username}`)
-				}));
-
-				menu.append(new MenuItem({
-					label: 'Create Gits',
-					click: () => shell.openExternal(`https://gist.github.com`)
-				}));
-
-				menu.append(new MenuItem({type: 'separator'}));
+				addDefaultTopMenus(menu);
 
 				_.forEach(repos, (repo) => {
 					console.log('adding repo - ' + repo.name);
@@ -88,30 +112,53 @@ mb.on('ready', function ready() {
 					}));
 				});
 
-				notifier.fireNotification({
-					message: 'completed github repo lookup'
-				});
+				if (!notification_triggers.successfully_connected) {
+					notification_triggers.successfully_connected = true;
+					notifier.fireNotification({
+						message: 'completed github repo lookup'
+					});
+				}
 
-				menu.append(new MenuItem({type: 'separator'}));
-
-				menu.append(new MenuItem({
-					label: 'Configure',
-					click: () => createMainWindow("settings")
-				}));
-
-				menu.append(new MenuItem({
-					label: 'About',
-					click: () => createMainWindow("about")
-				}));
-
-				menu.append(new MenuItem({
-					label: 'Quit',
-					click: onExitHandler
-				}));
+				// Adding all other menus which should be present by default
+				addDefaultBottomMenus(menu);
 
 				//Enable the tray
 				mb.tray.setContextMenu(menu);
-			}));
+			};
+
+			/**
+			 * Attempt to hit github
+			 */
+			github.findRepos()
+				.then(handleSuccess)
+				.catch(function (error) {
+					console.error(error);
+
+					notification_triggers.successfully_connected = false;
+
+					if (error.status === '403') {
+						// Exceeded rate limit
+						if (_.get(error, 'x-ratelimit-remaining') === 0) {
+							notifier.fireNotification({
+								message: 'Rate limit exceeded!'
+							});
+							// TODO handle exceeded rate limit and trigger refresh from 'x-ratelimit-reset' header
+						}
+
+					} else {
+						notifier.fireNotification({
+							message: 'Failed to connect to Github'
+						});
+					}
+
+					var menu = new Menu();
+
+					// Adding all other menus which should be present by default
+					addDefaultBottomMenus(menu);
+
+					//Enable the tray
+					mb.tray.setContextMenu(menu);
+				})
 		})
 	};
 
