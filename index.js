@@ -136,15 +136,12 @@ mb.on('ready', function ready() {
 
 					notification_triggers.successfully_connected = false;
 
-					if (error.status === '403') {
-						// Exceeded rate limit
-						if (_.get(error, 'x-ratelimit-remaining') === 0) {
-							notifier.fireNotification({
-								message: 'Rate limit exceeded!'
-							});
-							// TODO handle exceeded rate limit and trigger refresh from 'x-ratelimit-reset' header
-						}
-
+					// Exceeded rate limits
+					if (error.statusCode === 403 && (_.get(error.headers, 'x-ratelimit-remaining') === '0')) {
+						notifier.fireNotification({
+							message: 'Rate limit exceeded!'
+						});
+						// TODO handle exceeded rate limit and trigger refresh from 'x-ratelimit-reset' header
 					} else {
 						notifier.fireNotification({
 							message: 'Failed to connect to Github'
