@@ -1,16 +1,13 @@
 const _ = require('lodash');
 
 /**
- *
+ * Simply trigger and run a promise based task - refreshing based on the provided options
  */
-class GitHubLookupScheduler {
+class TaskScheduler {
 
 	constructor(_options, _timer = null) {
 		_.defaults(_options, {
-			task_timeout_in_sec: 30,
-			task_retries_before_fail: 10,
-			refresh_interval: 3000000,
-			enable_auto_refresh: true
+			refresh_interval_in_sec: 30
 		});
 		this.options = _options;
 		this.timer = _timer;
@@ -21,12 +18,16 @@ class GitHubLookupScheduler {
 	 * @param callback
 	 */
 	startTask(callback) {
-		let timeout_in_mills = this.options.task_timeout_in_sec * 1000;
-		if (timeout_in_mills > 0 && this.options.enable_auto_refresh) {
-			console.log('setTimeout()', timeout_in_mills);
-			callback();
-			this.timer = setInterval(callback, timeout_in_mills);
-		}
+		var self = this;
+		callback()
+			.then(() => {
+				let timeout_in_mills = self.options.refresh_interval_in_sec * 1000;
+				if (timeout_in_mills > 0) {
+					console.log('setTimeout()', timeout_in_mills);
+					self.timer = setInterval(callback, timeout_in_mills);
+				}
+			})
+			.catch((err) => console.error('failed to run task', err));
 	}
 
 	/**
@@ -50,5 +51,5 @@ class GitHubLookupScheduler {
 }
 
 module.exports = {
-	GitHubLookupScheduler: GitHubLookupScheduler
+	TaskScheduler: TaskScheduler
 };

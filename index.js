@@ -27,7 +27,9 @@ var Notifier = require('./services/Notifier');
 var notifier = new Notifier();
 
 var Schedular = require('./services/Schedular');
-var tickingScheduler = new Schedular.GitHubLookupScheduler({});
+var tickingScheduler = new Schedular.TaskScheduler({
+	refresh_interval_in_sec: 30 // once every 30s
+});
 
 function createMainWindow(type) {
 	console.log('createMainWindow()', type);
@@ -68,14 +70,24 @@ mb.on('ready', function ready() {
 		var subMenu = new Menu();
 		subMenu.append(new MenuItem({
 			label: 'Configure',
+			role: 'help',
+			accelerator: 'CmdOrCtrl+H',
 			click: () => createMainWindow("settings")
 		}));
 		subMenu.append(new MenuItem({
 			label: 'About',
+			role: 'about',
 			click: () => createMainWindow("about")
 		}));
 		subMenu.append(new MenuItem({
+			label: 'Refresh',
+			role: 'reload',
+			accelerator: 'CmdOrCtrl+R',
+			click: () => lookupTask()
+		}));
+		subMenu.append(new MenuItem({
 			label: 'Quit',
+			role: 'close',
 			click: onExitHandler
 		}));
 
@@ -152,10 +164,9 @@ mb.on('ready', function ready() {
 	};
 
 	var lookupTask = () => {
+		console.log('lookupTask() triggered');
 
-		/**
-		 * Attempt to hit github
-		 */
+		/** Attempt to hit github */
 		return github.findRepos()
 			.then(handleSuccess)
 			.catch(handleFailure);
@@ -184,6 +195,8 @@ mb.on('ready', function ready() {
 					message: 'Completed github repo lookup'
 				});
 			}
+
+			return repos;
 		}
 
 		function handleFailure(error) {
@@ -210,11 +223,13 @@ mb.on('ready', function ready() {
 
 			//Enable the tray
 			mb.tray.setContextMenu(menu);
+
+			return error;
 		}
 	};
 
 	var triggerGithubScheduler = function () {
-		tickingScheduler.startTask(lookupTask)
+		return tickingScheduler.startTask(lookupTask)
 	};
 
 	// TODO allow settings to configure enable auto refresh
@@ -226,7 +241,7 @@ mb.on('ready', function ready() {
 
 var breakSentence = (longString, charLimit = 50) => {
 	// Split by spaces & then join words so that each string section is less than charLimit
-	var result = longString
+	return longString
 		.split(/\s+/)
 		.reduce((prev, curr) => {
 			if (prev.length && (prev[prev.length - 1] + ' ' + curr).length <= charLimit) {
@@ -237,7 +252,5 @@ var breakSentence = (longString, charLimit = 50) => {
 			return prev;
 		}, [])
 		.join('\n');
-	console.log('Splitting sentence to', result);
-	return result;
 };
 
