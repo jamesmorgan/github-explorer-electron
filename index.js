@@ -100,36 +100,58 @@ mb.on('ready', function ready() {
 	};
 
 	var addRepoMenu = (menu, repo) => {
+		console.log('Adding repo menu item for', repo.name);
+
 		var repoMenu = new Menu();
+
+		// TODO add config option for this
+		if (repo.description) {
+			repoMenu.append(new MenuItem({
+				label: breakSentence(repo.description),
+				enabled: false
+			}));
+		}
+
 		repoMenu.append(new MenuItem({
-			label: 'Github page',
+			label: 'Github Home',
 			click: () => shell.openExternal(repo.html_url)
 		}));
 		repoMenu.append(new MenuItem({
-			label: 'Project home',
+			label: 'Project Home',
 			click: () => shell.openExternal(repo.homepage)
 		}));
-		repoMenu.append(new MenuItem({
-			label: 'Project Wiki',
-			click: () => shell.openExternal(repo.html_url + '/wiki')
-		}));
+
+		if (repo.has_wiki) {
+			repoMenu.append(new MenuItem({
+				label: 'Project Wiki',
+				click: () => shell.openExternal(`${repo.html_url}/wiki`)
+			}));
+		}
+
 		repoMenu.append(new MenuItem({
 			label: 'Pulls',
-			click: () => shell.openExternal(repo.pulls_url)
+			click: () => shell.openExternal(`${repo.html_url}/pulls`)
 		}));
+
+		repoMenu.append(new MenuItem({type: 'separator'}));
+
 		repoMenu.append(new MenuItem({
-			label: 'Watchers',
-			click: () => shell.openExternal(repo.html_url + '/watchers')
+			label: `Watchers: ${repo.watchers_count || 0}`,
+			click: () => shell.openExternal(`${repo.html_url}/watchers`)
 		}));
+
+		if (repo.has_issues) {
+			repoMenu.append(new MenuItem({
+				label: `Issues: ${repo.open_issues_count || 0}`,
+				click: () => shell.openExternal(`${repo.html_url}/issues`)
+			}));
+		}
+
 		repoMenu.append(new MenuItem({
-			label: 'Issues',
-			click: () => shell.openExternal(repo.issues_url)
+			label: `Forks: ${repo.forks_count || 0}`,
+			click: () => shell.openExternal(`${repo.html_url}/forks`)
 		}));
-		repoMenu.append(new MenuItem({
-			label: 'Forks',
-			click: () => shell.openExternal(repo.forks_url)
-		}));
-		
+
 		menu.append(new MenuItem({
 			label: repo.name,
 			submenu: repoMenu
@@ -144,15 +166,12 @@ mb.on('ready', function ready() {
 				var menu = new Menu();
 				addDefaultTopMenus(menu);
 
-				_.forEach(repos, (repo) => {
-					console.log('adding repo', repo);
-					addRepoMenu(menu, repo);
-				});
+				_.forEach(repos, (repo) => addRepoMenu(menu, repo));
 
 				if (!notification_triggers.successfully_connected) {
 					notification_triggers.successfully_connected = true;
 					notifier.fireNotification({
-						message: 'completed github repo lookup'
+						message: 'Completed github repo lookup'
 					});
 				}
 
@@ -203,3 +222,19 @@ mb.on('ready', function ready() {
 	triggerGithubScheduler()
 
 });
+
+var breakSentence = (longString, charLimit = 10) => {
+	// Split by spaces & then join words so that each string section is less than charLimit
+	return longString
+		.split(/\s+/)
+		.reduce((prev, curr) => {
+			if (prev.length && (prev[prev.length - 1] + ' ' + curr).length <= charLimit) {
+				prev[prev.length - 1] += ' ' + curr;
+			} else {
+				prev.push(curr);
+			}
+			return prev;
+		}, [])
+		.join('\n');
+};
+
