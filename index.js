@@ -27,7 +27,7 @@ var Notifier = require('./services/Notifier');
 var notifier = new Notifier();
 
 var Schedular = require('./services/Schedular');
-var gitHubLookupScheduler = new Schedular.GitHubLookupScheduler({});
+var tickingScheduler = new Schedular.GitHubLookupScheduler({});
 
 function createMainWindow(type) {
 	console.log('createMainWindow()', type);
@@ -44,12 +44,11 @@ function createMainWindow(type) {
 }
 
 var onExitHandler = () => {
-	app.quit();
+	tickingScheduler.stopTicker();
 	mb.app.quit();
-	if (gitHubLookupScheduler.isRunning()) {
-		gitHubLookupScheduler.stopTicker();
-	}
+	app.quit();
 };
+
 app.on('window-all-closed', onExitHandler);
 
 var notification_triggers = {
@@ -65,7 +64,7 @@ mb.on('ready', function ready() {
 	}));
 	mb.tray.setContextMenu(menu);
 
-	function addDefaultBottomMenus(menu) {
+	var addDefaultBottomMenus = (menu) => {
 		var subMenu = new Menu();
 		subMenu.append(new MenuItem({
 			label: 'Configure',
@@ -85,7 +84,7 @@ mb.on('ready', function ready() {
 			label: 'About',
 			submenu: subMenu
 		}));
-	}
+	};
 
 	var addDefaultTopMenus = (menu) => {
 		menu.append(new MenuItem({
@@ -102,130 +101,132 @@ mb.on('ready', function ready() {
 	var addRepoMenu = (menu, repo) => {
 		console.log('Adding repo menu item for', repo.name);
 
-		var repoMenu = new Menu();
+		var subMenu = new Menu();
 
-		// TODO add config option for this
+		// TODO add config option to display description in menu-bar
 		if (repo.description) {
-			repoMenu.append(new MenuItem({
+			subMenu.append(new MenuItem({
 				label: breakSentence(repo.description),
 				enabled: false
 			}));
 		}
-
-		repoMenu.append(new MenuItem({
+		subMenu.append(new MenuItem({
 			label: 'Github Home',
 			click: () => shell.openExternal(repo.html_url)
 		}));
-		repoMenu.append(new MenuItem({
+		subMenu.append(new MenuItem({
 			label: 'Project Home',
 			click: () => shell.openExternal(repo.homepage)
 		}));
-
+		subMenu.append(new MenuItem({
+			label: 'Pulls',
+			click: () => shell.openExternal(`${repo.html_url}/pulls`)
+		}));
 		if (repo.has_wiki) {
-			repoMenu.append(new MenuItem({
+			subMenu.append(new MenuItem({
 				label: 'Project Wiki',
 				click: () => shell.openExternal(`${repo.html_url}/wiki`)
 			}));
 		}
-
-		repoMenu.append(new MenuItem({
-			label: 'Pulls',
-			click: () => shell.openExternal(`${repo.html_url}/pulls`)
-		}));
-
-		repoMenu.append(new MenuItem({type: 'separator'}));
-
-		repoMenu.append(new MenuItem({
-			label: `Watchers: ${repo.watchers_count || 0}`,
-			click: () => shell.openExternal(`${repo.html_url}/watchers`)
-		}));
-
+		subMenu.append(new MenuItem({type: 'separator'}));
 		if (repo.has_issues) {
-			repoMenu.append(new MenuItem({
+			subMenu.append(new MenuItem({
 				label: `Issues: ${repo.open_issues_count || 0}`,
 				click: () => shell.openExternal(`${repo.html_url}/issues`)
 			}));
 		}
-
-		repoMenu.append(new MenuItem({
+		subMenu.append(new MenuItem({
+			label: `Watchers: ${repo.watchers_count || 0}`,
+			click: () => shell.openExternal(`${repo.html_url}/watchers`)
+		}));
+		subMenu.append(new MenuItem({
 			label: `Forks: ${repo.forks_count || 0}`,
 			click: () => shell.openExternal(`${repo.html_url}/forks`)
 		}));
 
+		// Add the new repo and sub menu
 		menu.append(new MenuItem({
 			label: repo.name,
-			submenu: repoMenu
+			submenu: subMenu
 		}));
 	};
 
-	var triggerGithubScheduler = function () {
-		gitHubLookupScheduler.startTicker(function () {
+	var lookupTask = () => {
 
-			var handleSuccess = function (repos) {
+		/**
+		 * Attempt to hit github
+		 */
+		return github.findRepos()
+			.then(handleSuccess)
+			.catch(handleFailure);
 
-				var menu = new Menu();
-				addDefaultTopMenus(menu);
+		function handleSuccess(repos) {
+			console.log(`Found a total of [${_.size(repos)}] repositories`);
 
-				_.forEach(repos, (repo) => addRepoMenu(menu, repo));
+			var menu = new Menu();
 
-				if (!notification_triggers.successfully_connected) {
-					notification_triggers.successfully_connected = true;
-					notifier.fireNotification({
-						message: 'Completed github repo lookup'
-					});
-				}
+			// Gist, Homepage
+			addDefaultTopMenus(menu);
 
-				// Adding all other menus which should be present by default
-				addDefaultBottomMenus(menu);
+			// Each repository found
+			_.forEach(repos, (repo) => addRepoMenu(menu, repo));
 
-				//Enable the tray
-				mb.tray.setContextMenu(menu);
-			};
+			// About, Configure, Quit
+			addDefaultBottomMenus(menu);
 
-			/**
-			 * Attempt to hit github
-			 */
-			github.findRepos()
-				.then(handleSuccess)
-				.catch(function (error) {
-					console.error(error);
+			// Rest/enable the tray
+			mb.tray.setContextMenu(menu);
 
-					notification_triggers.successfully_connected = false;
+			// TODO allow settings to disable notifications
+			if (!notification_triggers.successfully_connected) {
+				notification_triggers.successfully_connected = true;
+				notifier.fireNotification({
+					message: 'Completed github repo lookup'
+				});
+			}
+		}
 
-					// Exceeded rate limits
-					if (error.statusCode === 403 && (_.get(error.headers, 'x-ratelimit-remaining') === '0')) {
-						notifier.fireNotification({
-							message: 'Rate limit exceeded!'
-						});
-						// TODO handle exceeded rate limit and trigger refresh from 'x-ratelimit-reset' header
-					} else {
-						notifier.fireNotification({
-							message: 'Failed to connect to Github'
-						});
-					}
+		function handleFailure(error) {
+			console.error(error);
 
-					var menu = new Menu();
+			notification_triggers.successfully_connected = false;
 
-					// Adding all other menus which should be present by default
-					addDefaultBottomMenus(menu);
+			// Exceeded rate limits
+			if (error.statusCode === 403 && (_.get(error.headers, 'x-ratelimit-remaining') === '0')) {
+				notifier.fireNotification({
+					message: 'Rate limit exceeded!'
+				});
+				// TODO handle exceeded rate limit and trigger refresh from 'x-ratelimit-reset' header
+			} else {
+				notifier.fireNotification({
+					message: 'Failed to connect to Github'
+				});
+			}
 
-					//Enable the tray
-					mb.tray.setContextMenu(menu);
-				})
-		})
+			var menu = new Menu();
+
+			// Adding all other menus which should be present by default
+			addDefaultBottomMenus(menu);
+
+			//Enable the tray
+			mb.tray.setContextMenu(menu);
+		}
 	};
 
-	// if options not set
-	// launch settings
-	// otherwise trigger github
+	var triggerGithubScheduler = function () {
+		tickingScheduler.startTask(lookupTask)
+	};
 
-	triggerGithubScheduler()
-
+	// TODO allow settings to configure enable auto refresh
+	let shouldAutoRefresh = true;
+	if (shouldAutoRefresh) {
+		triggerGithubScheduler();
+	}
 });
 
-var breakSentence = (longString, charLimit = 10) => {
+var breakSentence = (longString, charLimit = 50) => {
 	// Split by spaces & then join words so that each string section is less than charLimit
-	return longString
+	var result = longString
 		.split(/\s+/)
 		.reduce((prev, curr) => {
 			if (prev.length && (prev[prev.length - 1] + ' ' + curr).length <= charLimit) {
@@ -236,5 +237,7 @@ var breakSentence = (longString, charLimit = 10) => {
 			return prev;
 		}, [])
 		.join('\n');
+	console.log('Splitting sentence to', result);
+	return result;
 };
 

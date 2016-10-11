@@ -5,22 +5,22 @@ const _ = require('lodash');
  */
 class GitHubLookupScheduler {
 
-	constructor(options) {
-		_.defaults(options, {
+	constructor(_options, _timer = null) {
+		_.defaults(_options, {
 			task_timeout_in_sec: 30,
 			task_retries_before_fail: 10,
 			refresh_interval: 3000000,
 			enable_auto_refresh: true
 		});
-		this.options = options;
-		this.timer = null;
+		this.options = _options;
+		this.timer = _timer;
 	}
 
 	/**
 	 * Start and schedule a new tick with the provided timeout and callback
 	 * @param callback
 	 */
-	startTicker(callback) {
+	startTask(callback) {
 		let timeout_in_mills = this.options.task_timeout_in_sec * 1000;
 		if (timeout_in_mills > 0 && this.options.enable_auto_refresh) {
 			console.log('setTimeout()', timeout_in_mills);
@@ -43,7 +43,7 @@ class GitHubLookupScheduler {
 	 */
 	stopTicker() {
 		console.log('stopTicker()');
-		if (this.timer) {
+		if (this.isRunning()) {
 			clearInterval(this.timer)
 		}
 	}
