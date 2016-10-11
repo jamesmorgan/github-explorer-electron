@@ -66,22 +66,28 @@ mb.on('ready', function ready() {
 	mb.tray.setContextMenu(menu);
 
 	function addDefaultBottomMenus(menu) {
-		menu.append(new MenuItem({type: 'separator'}));
-		menu.append(new MenuItem({
+		var subMenu = new Menu();
+		subMenu.append(new MenuItem({
 			label: 'Configure',
 			click: () => createMainWindow("settings")
 		}));
-		menu.append(new MenuItem({
+		subMenu.append(new MenuItem({
 			label: 'About',
 			click: () => createMainWindow("about")
 		}));
-		menu.append(new MenuItem({
+		subMenu.append(new MenuItem({
 			label: 'Quit',
 			click: onExitHandler
 		}));
+
+		menu.append(new MenuItem({type: 'separator'}));
+		menu.append(new MenuItem({
+			label: 'About',
+			submenu: subMenu
+		}));
 	}
 
-	function addDefaultTopMenus(menu) {
+	var addDefaultTopMenus = (menu) => {
 		menu.append(new MenuItem({
 			label: 'Github Home',
 			click: () => shell.openExternal(`https://github.com/${github.username}`)
@@ -91,7 +97,44 @@ mb.on('ready', function ready() {
 			click: () => shell.openExternal(`https://gist.github.com`)
 		}));
 		menu.append(new MenuItem({type: 'separator'}));
-	}
+	};
+
+	var addRepoMenu = (menu, repo) => {
+		var repoMenu = new Menu();
+		repoMenu.append(new MenuItem({
+			label: 'Github page',
+			click: () => shell.openExternal(repo.html_url)
+		}));
+		repoMenu.append(new MenuItem({
+			label: 'Project home',
+			click: () => shell.openExternal(repo.homepage)
+		}));
+		repoMenu.append(new MenuItem({
+			label: 'Project Wiki',
+			click: () => shell.openExternal(repo.html_url + '/wiki')
+		}));
+		repoMenu.append(new MenuItem({
+			label: 'Pulls',
+			click: () => shell.openExternal(repo.pulls_url)
+		}));
+		repoMenu.append(new MenuItem({
+			label: 'Watchers',
+			click: () => shell.openExternal(repo.html_url + '/watchers')
+		}));
+		repoMenu.append(new MenuItem({
+			label: 'Issues',
+			click: () => shell.openExternal(repo.issues_url)
+		}));
+		repoMenu.append(new MenuItem({
+			label: 'Forks',
+			click: () => shell.openExternal(repo.forks_url)
+		}));
+		
+		menu.append(new MenuItem({
+			label: repo.name,
+			submenu: repoMenu
+		}));
+	};
 
 	var triggerGithubScheduler = function () {
 		gitHubLookupScheduler.startTicker(function () {
@@ -102,14 +145,8 @@ mb.on('ready', function ready() {
 				addDefaultTopMenus(menu);
 
 				_.forEach(repos, (repo) => {
-					console.log('adding repo - ' + repo.name);
-					menu.append(new MenuItem({
-						label: repo.name,
-						click: function (current) {
-							console.log('clicked', repo.name);
-							shell.openExternal(repo.html_url);
-						}
-					}));
+					console.log('adding repo', repo);
+					addRepoMenu(menu, repo);
 				});
 
 				if (!notification_triggers.successfully_connected) {

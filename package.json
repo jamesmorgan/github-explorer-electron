@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "description": "Cross platform github integration in your desktop menu bar!",
   "license": "MIT",
-  "repository": "https://github.com/jamesmorgan/github-explorer-electron",
+  "repository": "git@github.com:jamesmorgan/github-explorer-electron.git",
   "author": {
     "name": "",
     "email": "",
