@@ -14,20 +14,17 @@ const mb = menubar({
 	showOnRightClick: false
 });
 
+// adds debug features like hotkeys for triggering dev tools and reload
 require('electron-debug')({showDevTools: true});
 
-// adds debug features like hotkeys for triggering dev tools and reload
-require('electron-debug')();
-
 var GithubLookupService = require('./services/GithubLookupService');
-
 var github = new GithubLookupService("jamesmorgan");
 
 var Notifier = require('./services/Notifier');
 var notifier = new Notifier();
 
-var Schedular = require('./services/Schedular');
-var tickingScheduler = new Schedular.TaskScheduler({
+var TaskScheduler = require('./services/TaskScheduler');
+var taskScheduler = new TaskScheduler({
 	refresh_interval_in_sec: 30 // once every 30s
 });
 
@@ -46,7 +43,7 @@ function createMainWindow(type) {
 }
 
 var onExitHandler = () => {
-	tickingScheduler.stopTicker();
+	taskScheduler.stopTicker();
 	mb.app.quit();
 	app.quit();
 };
@@ -80,10 +77,10 @@ mb.on('ready', function ready() {
 			click: () => createMainWindow("about")
 		}));
 		subMenu.append(new MenuItem({
-			label: 'Refresh',
+			label: 'Force Refresh',
 			role: 'reload',
 			accelerator: 'CmdOrCtrl+R',
-			click: () => lookupTask()
+			click: () => gitHubLookupTask()
 		}));
 		subMenu.append(new MenuItem({
 			label: 'Quit',
@@ -163,8 +160,8 @@ mb.on('ready', function ready() {
 		}));
 	};
 
-	var lookupTask = () => {
-		console.log('lookupTask() triggered');
+	var gitHubLookupTask = () => {
+		console.log('gitHubLookupTask() triggered');
 
 		/** Attempt to hit github */
 		return github.findRepos()
@@ -191,29 +188,29 @@ mb.on('ready', function ready() {
 			// TODO allow settings to disable notifications
 			if (!notification_triggers.successfully_connected) {
 				notification_triggers.successfully_connected = true;
-				notifier.fireNotification({
-					message: 'Completed github repo lookup'
-				});
+				notifier.fireNotification({message: 'Completed github repo lookup'});
 			}
 
 			return repos;
 		}
 
 		function handleFailure(error) {
-			console.error(error);
-
+			// Rest success flag
 			notification_triggers.successfully_connected = false;
 
 			// Exceeded rate limits
 			if (error.statusCode === 403 && (_.get(error.headers, 'x-ratelimit-remaining') === '0')) {
-				notifier.fireNotification({
-					message: 'Rate limit exceeded!'
-				});
-				// TODO handle exceeded rate limit and trigger refresh from 'x-ratelimit-reset' header
+				notifier.fireNotification({message: 'Rate limit exceeded!'});
+
+				// When known error - delay re-try until provided time
+				throw {
+					type: 'SET_RETRY_TIME',
+					data: {
+						reset_time: _.get(error.headers, 'x-ratelimit-reset')
+					}
+				};
 			} else {
-				notifier.fireNotification({
-					message: 'Failed to connect to Github'
-				});
+				notifier.fireNotification({message: 'Failed to connect to Github'});
 			}
 
 			var menu = new Menu();
@@ -224,12 +221,13 @@ mb.on('ready', function ready() {
 			//Enable the tray
 			mb.tray.setContextMenu(menu);
 
-			return error;
+			// Rethrow the error so promised chain can react
+			throw error;
 		}
 	};
 
 	var triggerGithubScheduler = function () {
-		return tickingScheduler.startTask(lookupTask)
+		return taskScheduler.startTask(gitHubLookupTask)
 	};
 
 	// TODO allow settings to configure enable auto refresh
