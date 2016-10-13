@@ -160,6 +160,8 @@ mb.on('ready', function ready() {
 		}));
 	};
 
+	var previous_repos = null;
+
 	var gitHubLookupTask = () => {
 		console.log('gitHubLookupTask() triggered');
 
@@ -168,8 +170,8 @@ mb.on('ready', function ready() {
 			.then(handleSuccess)
 			.catch(handleFailure);
 
-		function handleSuccess(repos) {
-			console.log(`Found a total of [${_.size(repos)}] repositories`);
+		function handleSuccess(current_repos) {
+			console.log(`Found a total of [${_.size(current_repos)}] repositories`);
 
 			var menu = new Menu();
 
@@ -177,7 +179,7 @@ mb.on('ready', function ready() {
 			addDefaultTopMenus(menu);
 
 			// Each repository found
-			_.forEach(repos, (repo) => addRepoMenu(menu, repo));
+			_.forEach(current_repos, (repo) => addRepoMenu(menu, repo));
 
 			// About, Configure, Quit
 			addDefaultBottomMenus(menu);
@@ -191,7 +193,18 @@ mb.on('ready', function ready() {
 				notifier.fireNotification({message: 'Completed github repo lookup'});
 			}
 
-			return repos;
+			// Work out changes
+			github.determineChanges(previous_repos, current_repos).then((changes) => {
+				console.log('changes', changes);
+				_.forEach(changes, (change) => {
+					notifier.fireNotification({
+						message: change.message
+					});
+				});
+				previous_repos = current_repos
+			});
+
+			return current_repos;
 		}
 
 		function handleFailure(error) {
