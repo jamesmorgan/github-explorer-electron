@@ -22,8 +22,8 @@ class GithubLookupService {
 
 	findUserDetails() {
 		var self = this;
-		return new Promise(function (resolve, reject) {
-			self.client.get(`/users/${self.username}`, {}, function (err, status, body, headers) {
+		return new Promise((resolve, reject) => {
+			self.client.get(`/users/${self.username}`, {}, (err, status, body, headers) => {
 				if (err) {
 					// console.log(err, status);
 					reject(err);
@@ -37,8 +37,8 @@ class GithubLookupService {
 
 	findRepos() {
 		var self = this;
-		return new Promise(function (resolve, reject) {
-			self.client.get(`/users/${self.username}/repos`, {}, function (err, status, body, headers) {
+		return new Promise((resolve, reject) => {
+			self.client.get(`/users/${self.username}/repos`, {}, (err, status, body, headers) => {
 				if (err) {
 					// console.log(err, status);
 					reject(err);
@@ -62,9 +62,32 @@ class GithubLookupService {
 
 		// console.log('previous_repos', previous_repos);
 
+		// if (previous_repos) {
+		// 	_.forEach(current_repos, (current_repo) => {
+		// 		var newly_created_repo = _.find(previous_repos, {id: current_repo.id});
+		// 		// if we find a new repo not in the previous list assume its been created
+		// 		if (newly_created_repo) {
+		// 			changes.push({
+		// 				message: "Repository Added",
+		// 				content: newly_created_repo.name,
+		// 				link_url: `https://github.com/${this.username}/${newly_created_repo.name}`
+		// 			});
+		// 		}
+		// 	});
+		// }
+
 		_.forEach(previous_repos, (existing_repo) => {
 
-			var new_repo = find(current_repos, {id: existing_repo.id});
+			var new_repo = _.find(current_repos, {id: existing_repo.id});
+
+			// if we cant find the existing repo in the new list, assume its deleted
+			if (!new_repo) {
+				changes.push({
+					message: "Repository Deleted",
+					content: existing_repo.name,
+					link_url: `https://github.com/${this.username}/${existing_repo.name}`
+				});
+			}
 
 			if (existing_repo.watchers > new_repo.watchers) {
 				changes.push({

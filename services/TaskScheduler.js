@@ -8,7 +8,7 @@ class TaskScheduler {
 
 	constructor(_options) {
 		_.defaults(_options, {
-			refresh_interval_in_sec: 30
+			refresh_interval_in_sec: 60 * 5 // 5 minutes
 		});
 		/** various config options */
 		this.options = _options;

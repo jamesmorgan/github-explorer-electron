@@ -25,8 +25,10 @@ var notifier = new Notifier();
 
 var TaskScheduler = require('./services/TaskScheduler');
 var taskScheduler = new TaskScheduler({
-	refresh_interval_in_sec: 30 // once every 30s
+	// refresh_interval_in_sec: 30 // once every 30s
 });
+
+var MenuBuilder = require('./services/MenuBuilder');
 
 function createMainWindow(type) {
 	console.log('createMainWindow()', type);
@@ -62,6 +64,10 @@ mb.on('ready', function ready() {
 		label: 'Looking up repos...'
 	}));
 	mb.tray.setContextMenu(menu);
+
+	var menuBuilder = new MenuBuilder({
+		tray: mb.tray
+	});
 
 	var addDefaultBottomMenus = (menu) => {
 		var subMenu = new Menu();
