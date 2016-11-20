@@ -11,7 +11,6 @@ const {app, Menu, MenuItem} = require('electron');
 // const app = electron.app;
 const mb = menubar({
 	tooltip: 'Github Explorer',
-	// icon:  __dirname + 'resources/tray/icon.png',
 	icon:  path.join(__dirname, './resources/tray/icon.png'),
 	showOnRightClick: false
 });
@@ -28,7 +27,7 @@ var notifier = new Notifier();
 
 var TaskScheduler = require('./services/TaskScheduler');
 var taskScheduler = new TaskScheduler({
-	refresh_interval_in_sec: 30 // once every 30s
+	// refresh_interval_in_sec: 30 // once every 30s
 });
 
 var MenuBuilder = require('./services/MenuBuilder');
@@ -217,7 +216,7 @@ mb.on('ready', function ready() {
 			notification_triggers.successfully_connected = false;
 
 			// Exceeded rate limits
-			if (error.type == ErrorCodes.EXCEEDED_RATE_LIMIT) {
+			if (error.type === ErrorCodes.EXCEEDED_RATE_LIMIT) {
 				notifier.fireNotification({message: 'Rate limit exceeded!'});
 			} else {
 				notifier.fireNotification({message: 'Failed to connect to Github'});

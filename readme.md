@@ -26,4 +26,4 @@ npm run build
 
 ## License
 
-MIT © [<%= name %>](<%= website %>)
+MIT © Github Explorer Election (James Morgan - http://jem-solutions.com)
