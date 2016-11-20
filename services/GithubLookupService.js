@@ -39,7 +39,7 @@ class GithubLookupService {
 	findRepos() {
 		var self = this;
 		return new Promise((resolve, reject) => {
-			// TODO {per_page:100} <- how to show all repos?
+			// TODO {per_page:100} <- how to show all repos by default?
 			self.client.get(`/users/${self.username}/repos`, {per_page: 100}, (error, status, body, headers) => {
 				if (error) {
 					// console.log(error, status);

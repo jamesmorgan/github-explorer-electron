@@ -1,4 +1,5 @@
 'use strict';
+const path = require('path');
 const electron = require('electron');
 const shell = electron.shell;
 
@@ -10,7 +11,8 @@ const {app, Menu, MenuItem} = require('electron');
 // const app = electron.app;
 const mb = menubar({
 	tooltip: 'Github Explorer',
-	icon: 'resources/tray/icon.png',
+	// icon:  __dirname + 'resources/tray/icon.png',
+	icon:  path.join(__dirname, './resources/tray/icon.png'),
 	showOnRightClick: false
 });
 
@@ -91,7 +93,6 @@ mb.on('ready', function ready() {
 		}));
 		subMenu.append(new MenuItem({
 			label: 'Quit',
-			role: 'close',
 			click: onExitHandler
 		}));
 

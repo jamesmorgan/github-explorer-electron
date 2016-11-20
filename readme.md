@@ -1,28 +1,28 @@
-# app
-
-> My superb app
-
+# Github Explorer Electron
 
 ## Dev
 
-```
-$ npm install
+```bash
+npm install
 ```
 
 ### Run
 
-```
-$ npm start
-```
-
-### Build
-
-```
-$ npm run build
+```bash
+npm start
 ```
 
-Builds the app for macOS, Linux, and Windows, using [electron-packager](https://github.com/electron-userland/electron-packager).
+### Build a distributable
 
+```bash
+npm install electron-packager -g
+```
+& 
+```bash
+npm run build
+```
+
+* Currently only builds for `OSX` & `Linux` using [electron-packager](https://github.com/electron-userland/electron-packager).
 
 ## License
 
