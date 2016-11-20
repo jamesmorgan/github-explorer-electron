@@ -17,6 +17,7 @@ const mb = menubar({
 // adds debug features like hotkeys for triggering dev tools and reload
 require('electron-debug')({showDevTools: true});
 
+const ErrorCodes = require('./services/ErrorCodes');
 var GithubLookupService = require('./services/GithubLookupService');
 var github = new GithubLookupService("jamesmorgan");
 
@@ -25,7 +26,7 @@ var notifier = new Notifier();
 
 var TaskScheduler = require('./services/TaskScheduler');
 var taskScheduler = new TaskScheduler({
-	// refresh_interval_in_sec: 30 // once every 30s
+	refresh_interval_in_sec: 30 // once every 30s
 });
 
 var MenuBuilder = require('./services/MenuBuilder');
@@ -121,7 +122,7 @@ mb.on('ready', function ready() {
 		// TODO add config option to display description in menu-bar
 		if (repo.description) {
 			subMenu.append(new MenuItem({
-				label: breakSentence(repo.description),
+				label: repo.description,
 				enabled: false
 			}));
 		}
@@ -151,8 +152,8 @@ mb.on('ready', function ready() {
 			}));
 		}
 		subMenu.append(new MenuItem({
-			label: `Watchers: ${repo.watchers_count || 0}`,
-			click: () => shell.openExternal(`${repo.html_url}/watchers`)
+			label: `Stars: ${repo.watchers_count || 0}`,
+			click: () => shell.openExternal(`${repo.html_url}/stargazers`)
 		}));
 		subMenu.append(new MenuItem({
 			label: `Forks: ${repo.forks_count || 0}`,
@@ -166,7 +167,7 @@ mb.on('ready', function ready() {
 		}));
 	};
 
-	var previous_repos = null;
+	let previous_repos = null;
 
 	var gitHubLookupTask = () => {
 		console.log('gitHubLookupTask() triggered');
@@ -200,15 +201,12 @@ mb.on('ready', function ready() {
 			}
 
 			// Work out changes
-			github.determineChanges(previous_repos, current_repos).then((changes) => {
-				console.log('changes', changes);
-				_.forEach(changes, (change) => {
-					notifier.fireNotification({
-						message: change.message
-					});
+			github.determineChanges(previous_repos, current_repos)
+				.then((changes) => {
+					console.log('changes', changes);
+					_.forEach(changes, (change) => notifier.fireNotification(change));
+					previous_repos = current_repos
 				});
-				previous_repos = current_repos
-			});
 
 			return current_repos;
 		}
@@ -218,16 +216,8 @@ mb.on('ready', function ready() {
 			notification_triggers.successfully_connected = false;
 
 			// Exceeded rate limits
-			if (error.statusCode === 403 && (_.get(error.headers, 'x-ratelimit-remaining') === '0')) {
+			if (error.type == ErrorCodes.EXCEEDED_RATE_LIMIT) {
 				notifier.fireNotification({message: 'Rate limit exceeded!'});
-
-				// When known error - delay re-try until provided time
-				throw {
-					type: 'SET_RETRY_TIME',
-					data: {
-						reset_time: _.get(error.headers, 'x-ratelimit-reset')
-					}
-				};
 			} else {
 				notifier.fireNotification({message: 'Failed to connect to Github'});
 			}
@@ -255,19 +245,3 @@ mb.on('ready', function ready() {
 		triggerGithubScheduler();
 	}
 });
-
-var breakSentence = (longString, charLimit = 50) => {
-	// Split by spaces & then join words so that each string section is less than charLimit
-	return longString
-		.split(/\s+/)
-		.reduce((prev, curr) => {
-			if (prev.length && (prev[prev.length - 1] + ' ' + curr).length <= charLimit) {
-				prev[prev.length - 1] += ' ' + curr;
-			} else {
-				prev.push(curr);
-			}
-			return prev;
-		}, [])
-		.join('\n');
-};
-

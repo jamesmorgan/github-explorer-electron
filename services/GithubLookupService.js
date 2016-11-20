@@ -1,6 +1,7 @@
-var github = require('octonode');
-var Promise = require('bluebird');
-var _ = require('lodash');
+const github = require('octonode');
+const ErrorCodes = require('./ErrorCodes');
+const Promise = require('bluebird');
+const _ = require('lodash');
 
 class GithubLookupService {
 
@@ -38,10 +39,22 @@ class GithubLookupService {
 	findRepos() {
 		var self = this;
 		return new Promise((resolve, reject) => {
-			self.client.get(`/users/${self.username}/repos`, {}, (err, status, body, headers) => {
-				if (err) {
-					// console.log(err, status);
-					reject(err);
+			// TODO {per_page:100} <- how to show all repos?
+			self.client.get(`/users/${self.username}/repos`, {per_page: 100}, (error, status, body, headers) => {
+				if (error) {
+					// console.log(error, status);
+
+					// Exceeded rate limits
+					if (error.statusCode === 403 && (_.get(error.headers, 'x-ratelimit-remaining') === '0')) {
+						reject({
+							type: ErrorCodes.EXCEEDED_RATE_LIMIT,
+							data: {
+								reset_time: _.get(error.headers, 'x-ratelimit-reset')
+							}
+						});
+					} else {
+						reject(error);
+					}
 				} else {
 					// console.log(body);
 					resolve(body);
@@ -53,67 +66,74 @@ class GithubLookupService {
 	/**
 	 * Determine what has changed
 	 *
-	 * @param previous_repos array fo repos
-	 * @param current_repos array fo repos
+	 * @param previous_repos array of repos
+	 * @param current_repos array of repos
 	 * @return {Promise.<Array>}
 	 */
 	determineChanges(previous_repos, current_repos) {
 		var changes = [];
 
-		// console.log('previous_repos', previous_repos);
+		if (previous_repos) {
 
-		// if (previous_repos) {
-		// 	_.forEach(current_repos, (current_repo) => {
-		// 		var newly_created_repo = _.find(previous_repos, {id: current_repo.id});
-		// 		// if we find a new repo not in the previous list assume its been created
-		// 		if (newly_created_repo) {
-		// 			changes.push({
-		// 				message: "Repository Added",
-		// 				content: newly_created_repo.name,
-		// 				link_url: `https://github.com/${this.username}/${newly_created_repo.name}`
-		// 			});
-		// 		}
-		// 	});
-		// }
+			_.forEach(current_repos, (repo) => {
+				var found_repo = _.find(previous_repos, {id: repo.id});
+				// If we dont find the repo in the previous lookup, assume its been added
+				if (!found_repo) {
+					changes.push({
+						message: `Repository Added - [${repo.name}]`,
+						content: repo.name,
+						link_url: `https://github.com/${this.username}/${repo.name}`
+					});
+				}
+			});
+
+			_.forEach(previous_repos, (repo) => {
+				let found_repo = _.find(current_repos, {id: repo.id});
+				// If we find the repo in the previous lookup and not in the current repo
+				if (!found_repo) {
+					changes.push({
+						message: `Repository Deleted - [${repo.name}]`,
+						content: repo.name,
+						link_url: `https://github.com/${this.username}/${repo.name}`
+					});
+				}
+			});
+
+		}
 
 		_.forEach(previous_repos, (existing_repo) => {
 
-			var new_repo = _.find(current_repos, {id: existing_repo.id});
-
-			// if we cant find the existing repo in the new list, assume its deleted
+			let new_repo = _.find(current_repos, {id: existing_repo.id});
 			if (!new_repo) {
-				changes.push({
-					message: "Repository Deleted",
-					content: existing_repo.name,
-					link_url: `https://github.com/${this.username}/${existing_repo.name}`
-				});
+				console.log(`Repo [${existing_repo.name}] not found, assumed deleted so skipping remaining checks`);
+				return;
 			}
 
 			if (existing_repo.watchers > new_repo.watchers) {
 				changes.push({
-					message: "Watcher Removed",
+					message: `Stargazer Removed - [${existing_repo.name}]`,
 					content: existing_repo.name,
-					link_url: `https://github.com/${this.username}/${existing_repo.name}/watchers`
+					link_url: `https://github.com/${this.username}/${existing_repo.name}/stargazers`
 				});
 			}
 			else if (existing_repo.watchers < new_repo.watchers) {
 				changes.push({
-					message: "Watcher Added",
+					message: `Stargazer Added - [${existing_repo.name}]`,
 					content: existing_repo.name,
-					link_url: `https://github.com/${this.username}/${existing_repo.name}/watchers`
+					link_url: `https://github.com/${this.username}/${existing_repo.name}/stargazers`
 				});
 			}
 
 			if (existing_repo.open_issues_count > new_repo.open_issues_count) {
 				changes.push({
-					message: "Issue Resolved",
+					message: `Issue Resolved - [${existing_repo.name}]`,
 					content: existing_repo.name,
 					link_url: `https://github.com/${this.username}/${existing_repo.name}/issues`
 				});
 			}
 			else if (existing_repo.open_issues_count < new_repo.open_issues_count) {
 				changes.push({
-					message: "New Issue",
+					message: `New Issue - [${existing_repo.name}]`,
 					content: "",
 					link_url: `https://github.com/${this.username}/${existing_repo.name}/issues`
 				});
@@ -121,19 +141,20 @@ class GithubLookupService {
 
 			if (existing_repo.forks_count > new_repo.forks_count) {
 				changes.push({
-					message: "Removed Project Fork",
+					message: `Removed Project Fork - [${existing_repo.name}]`,
 					content: existing_repo.name,
 					link_url: `https://github.com/${this.username}/${existing_repo.name}/network`
 				});
 			}
 			else if (existing_repo.forks_count < new_repo.forks_count) {
 				changes.push({
-					message: "New Project Fork",
+					message: `New Project Fork - [${existing_repo.name}]`,
 					content: existing_repo.name,
 					link_url: `https://github.com/${this.username}/${existing_repo.name}/network`
 				});
 			}
 		});
+
 		return Promise.resolve(changes);
 	}
 

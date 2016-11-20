@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const moment = require('moment');
+const ErrorCodes = require('./ErrorCodes');
 
 /**
  * Simply trigger and run a promise based task - refreshing based on the provided options
@@ -49,7 +50,7 @@ class TaskScheduler {
 					self.failure_count++;
 
 					// Allow specific errors to use a different next tick time
-					if (_.get(err, 'data.type') === 'SET_RETRY_TIME') {
+					if (_.get(err, 'data.type') === ErrorCodes.EXCEEDED_RATE_LIMIT) {
 						let reset_time = _.get(err, 'reset_time');
 						console.error(`Expected failure found reset_time=[${reset_time}]`, err);
 						if (reset_time) {
