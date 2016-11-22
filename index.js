@@ -26,23 +26,28 @@ var Notifier = require('./services/Notifier');
 
 var TaskScheduler = require('./services/TaskScheduler');
 var taskScheduler = new TaskScheduler({
-	refresh_interval_in_sec: 30 // once every 30s
+	// refresh_interval_in_sec: 30 // once every 30s
 });
 
 var MenuBuilder = require('./services/MenuBuilder');
 
+// Keep a global reference of the window object, if you don't, the window will be closed automatically when the JavaScript object is garbage collected.
+let mainWindow;
+
 function createMainWindow(type) {
 	console.log('createMainWindow()', type);
-	// TODO launch NG2 application and navigate to type e.g. type = about OR settings
-	let mainWindow = new electron.BrowserWindow({
-		width: 600,
-		height: 600
-	});
-	mainWindow.loadURL(`file://${__dirname}/content/index.html`);
-	mainWindow.on('closed', function onClosed() {
-		mainWindow = null; // de-reference the window for multiple windows store them in an array
-	});
-	return mainWindow;
+	if (!mainWindow) {
+		// TODO launch NG2 application and navigate to type e.g. type = about OR settings
+		mainWindow = new electron.BrowserWindow({
+			width: 600,
+			height: 600
+		});
+		mainWindow.loadURL(`file://${__dirname}/content/index.html`);
+		mainWindow.on('closed', function onClosed() {
+			mainWindow = null; // de-reference the window for multiple windows store them in an array
+		});
+		return mainWindow;
+	}
 }
 
 var onExitHandler = () => {
@@ -51,9 +56,7 @@ var onExitHandler = () => {
 	app.quit();
 };
 
-app.on('window-all-closed', () => {
-	console.log('Closed')
-});
+app.on('window-all-closed', () => console.log('Closed'));
 
 var notification_triggers = {
 	successfully_connected: false

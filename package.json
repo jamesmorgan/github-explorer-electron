@@ -11,6 +11,9 @@
     "url": ""
   },
   "scripts": {
+    "temp-watch": "webpack --watch --progress --profile --colors --display-error-details --display-cached",
+    "temp-pre-start": "webpack --progress --profile --colors --display-error-details --display-cached",
+    "temp-start": "npm run watch & electron .",
     "start": "electron .",
     "build": "npm run build-osx & npm run build-linux",
     "build-osx": "electron-packager . --overwrite --out=dist --platform=darwin --icon=./resources/tray/icon.icns --enable-logging",
