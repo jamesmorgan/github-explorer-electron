@@ -4,17 +4,17 @@ const _ = require('lodash');
 
 class Notifier {
 
-	fireNotification(options) {
-		_.defaults(options, {
+	static fireNotification(messageOptions) {
+		_.defaults(messageOptions, {
 			title: 'Github Explorer',
-			icon: path.join(__dirname, './resources/tray/icon.png'), // Absolute path (doesn't work on balloons)
+			icon: path.join(__dirname, './resources/tray/icon.png'), // Absolute path (doesn't work on balloons) ... ?
 		});
 
-		if (_.has(options, 'link_url')) {
-			options.open = _.get(options, 'link_url');
+		if (_.has(messageOptions, 'link_url')) {
+			messageOptions.open = _.get(messageOptions, 'link_url');
 		}
 
-		notifier.notify(options);
+		notifier.notify(messageOptions);
 	}
 }
 

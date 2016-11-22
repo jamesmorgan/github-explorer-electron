@@ -11,7 +11,7 @@ const {app, Menu, MenuItem} = require('electron');
 // const app = electron.app;
 const mb = menubar({
 	tooltip: 'Github Explorer',
-	icon:  path.join(__dirname, './resources/tray/icon.png'),
+	icon: path.join(__dirname, './resources/tray/icon.png'),
 	showOnRightClick: false
 });
 
@@ -23,11 +23,10 @@ var GithubLookupService = require('./services/GithubLookupService');
 var github = new GithubLookupService("jamesmorgan");
 
 var Notifier = require('./services/Notifier');
-var notifier = new Notifier();
 
 var TaskScheduler = require('./services/TaskScheduler');
 var taskScheduler = new TaskScheduler({
-	// refresh_interval_in_sec: 30 // once every 30s
+	refresh_interval_in_sec: 30 // once every 30s
 });
 
 var MenuBuilder = require('./services/MenuBuilder');
@@ -52,7 +51,9 @@ var onExitHandler = () => {
 	app.quit();
 };
 
-app.on('window-all-closed', onExitHandler);
+app.on('window-all-closed', () => {
+	console.log('Closed')
+});
 
 var notification_triggers = {
 	successfully_connected: false
@@ -197,14 +198,14 @@ mb.on('ready', function ready() {
 			// TODO allow settings to disable notifications
 			if (!notification_triggers.successfully_connected) {
 				notification_triggers.successfully_connected = true;
-				notifier.fireNotification({message: 'Completed github repo lookup'});
+				Notifier.fireNotification({message: 'Completed github repo lookup'});
 			}
 
 			// Work out changes
 			github.determineChanges(previous_repos, current_repos)
 				.then((changes) => {
 					console.log('changes', changes);
-					_.forEach(changes, (change) => notifier.fireNotification(change));
+					_.forEach(changes, (change) => Notifier.fireNotification(change));
 					previous_repos = current_repos
 				});
 
@@ -217,9 +218,9 @@ mb.on('ready', function ready() {
 
 			// Exceeded rate limits
 			if (error.type === ErrorCodes.EXCEEDED_RATE_LIMIT) {
-				notifier.fireNotification({message: 'Rate limit exceeded!'});
+				Notifier.fireNotification({message: 'Rate limit exceeded!'});
 			} else {
-				notifier.fireNotification({message: 'Failed to connect to Github'});
+				Notifier.fireNotification({message: 'Failed to connect to Github'});
 			}
 
 			var menu = new Menu();

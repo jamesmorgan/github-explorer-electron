@@ -30,8 +30,8 @@ class TaskScheduler {
 
 		var hasExceedMaxRetries = () => this.failure_count > this.max_retries;
 
-		var scheduleNextInvocation = (refresh_interval_in_sec) => {
-			let timeout_in_mills = (refresh_interval_in_sec || this.options.refresh_interval_in_sec) * 1000;
+		var scheduleNextInvocation = (refresh_interval_in_sec = this.options.refresh_interval_in_sec) => {
+			let timeout_in_mills = refresh_interval_in_sec * 1000;
 			if (timeout_in_mills > 0 && !hasExceedMaxRetries()) {
 				console.log(`Triggered task [${callback.name}] setTimeout() with [${timeout_in_mills}]`);
 				this.timer = setTimeout(trigger, timeout_in_mills);
