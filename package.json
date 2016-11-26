@@ -6,15 +6,16 @@
   "license": "MIT",
   "repository": "git@github.com:jamesmorgan/github-explorer-electron.git",
   "author": {
-    "name": "",
+    "name": "James Morgan",
     "email": "",
-    "url": ""
+    "url": "http://jem-solutions.co.uk"
   },
   "scripts": {
+    "clean-ng-build": "rimraf browser-content/build/",
     "watch": "webpack --watch --progress --profile --colors --display-error-details --display-cached",
     "pre-start": "webpack --progress --profile --colors --display-error-details --display-cached",
     "start": "npm run watch & electron .",
-    "build": "npm run build-osx & npm run build-ng2 & npm run build-linux",
+    "build": "npm run build-ng2 & npm run build-osx & npm run build-linux",
     "build-ng2": "webpack --progress --profile --colors --display-error-details --display-cached",
     "build-osx": "electron-packager . --overwrite --out=dist --platform=darwin --icon=./resources/tray/icon.icns --enable-logging",
     "build-linux": "electron-packager . --overwrite --out=dist --platform=linux --icon=./resources/tray/icon.icns --enable-logging"
@@ -26,37 +27,43 @@
     "github-explorer"
   ],
   "dependencies": {
+    "@angular/common": "~2.2.0",
+    "@angular/compiler": "~2.2.0",
+    "@angular/core": "~2.2.0",
+    "@angular/forms": "~2.2.0",
+    "@angular/http": "~2.2.0",
+    "@angular/platform-browser": "~2.2.0",
+    "@angular/platform-browser-dynamic": "~2.2.0",
+    "@angular/router": "~3.2.0",
+    "@angular/upgrade": "~2.2.0",
+    "@ng-bootstrap/ng-bootstrap": "1.0.0-alpha.14",
+    "angular-in-memory-web-api": "~0.1.15",
     "bluebird": "3.4.6",
+    "core-js": "^2.4.1",
     "electron-debug": "1.0.1",
     "lodash": "4.16.4",
     "menubar": "5.1.0",
     "moment": "2.15.1",
     "node-notifier": "4.6.1",
     "octonode": "0.7.6",
-
-
-    "@angular/common": "2.0.0-rc.1",
-    "@angular/compiler": "2.0.0-rc.1",
-    "@angular/core": "2.0.0-rc.1",
-    "@angular/http": "2.0.0-rc.1",
-    "@angular/platform-browser": "2.0.0-rc.1",
-    "@angular/platform-browser-dynamic": "2.0.0-rc.1",
-    "@angular/router": "2.0.0-rc.1",
-    "reflect-metadata": "0.1.3",
-    "rxjs": "5.0.0-beta.6",
-    "systemjs": "0.19.26",
-    "zone.js": "^0.6.12"
+    "reflect-metadata": "^0.1.8",
+    "rxjs": "5.0.0-beta.12",
+    "systemjs": "0.19.39",
+    "typings": "2.0.0",
+    "zone.js": "^0.6.25"
   },
   "devDependencies": {
     "devtron": "^1.4.0",
     "electron": "^1.4.3",
     "electron-packager": "8.3.0",
-
-    "es6-shim": "^0.35.0",
-    "ts-loader": "^0.8.2",
-    "typescript": "^1.8.10",
+    "@types/core-js": "^0.9.34",
+    "@types/node": "^6.0.45",
+    "@types/jasmine": "^2.5.35",
+    "rimraf": "^2.5.2",
+    "es6-shim": "0.35.1",
+    "ts-loader": "1.2.2",
+    "typescript": "^2.0.3",
     "typings": "^0.8.1",
-    "webpack": "^1.12.9",
-    "webpack-dev-server": "^1.14.0"
+    "webpack": "^1.13.0"
   }
 }

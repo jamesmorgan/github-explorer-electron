@@ -3,6 +3,7 @@
 * Update README with links to old and new
 
 * NG2 Settings Configuration
+  * Basic NG2 App - DONE
   * username
   * API token
   * enable auto refresh

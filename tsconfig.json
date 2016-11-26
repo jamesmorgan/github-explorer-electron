@@ -1,13 +1,24 @@
 {
   "compilerOptions": {
-    "target": "ES6",
-    "module": "commonjs",
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "sourceMap": true
+	"target": "ES6",
+	"module": "commonjs",
+	"removeComments": false,
+	"emitDecoratorMetadata": true,
+	"experimentalDecorators": true,
+	"sourceMap": true,
+	"moduleResolution": "node",
+//	"noImplicitAny": false,
+	"typeRoots": [
+	  "./node_modules/@types"
+	],
+	"lib": ["es5", "dom"]
   },
+  "exclude": [
+	"node_modules",
+	"dist",
+	"browser-content/build/"
+  ],
   "files": [
-    "browser-content/app.ts"
+	"browser-content/main.ts"
   ]
 }
