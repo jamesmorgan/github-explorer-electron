@@ -13,10 +13,9 @@
   "scripts": {
     "clean-ng-build": "rimraf browser-content/build/",
     "watch": "webpack --watch --progress --profile --colors --display-error-details --display-cached",
-    "pre-start": "webpack --progress --profile --colors --display-error-details --display-cached",
+    "build-ng2": "webpack --progress --profile --colors --display-error-details --display-cached",
     "start": "npm run watch & electron .",
     "build": "npm run build-ng2 & npm run build-osx & npm run build-linux",
-    "build-ng2": "webpack --progress --profile --colors --display-error-details --display-cached",
     "build-osx": "electron-packager . --overwrite --out=dist --platform=darwin --icon=./resources/tray/icon.icns --enable-logging",
     "build-linux": "electron-packager . --overwrite --out=dist --platform=linux --icon=./resources/tray/icon.icns --enable-logging"
   },
