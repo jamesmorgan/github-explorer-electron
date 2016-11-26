@@ -42,7 +42,7 @@ function createMainWindow(type) {
 			width: 600,
 			height: 600
 		});
-		mainWindow.loadURL(`file://${__dirname}/content/index.html`);
+		mainWindow.loadURL(`file://${__dirname}/browser-content/index.html`);
 		mainWindow.on('closed', function onClosed() {
 			mainWindow = null; // de-reference the window for multiple windows store them in an array
 		});
@@ -50,11 +50,17 @@ function createMainWindow(type) {
 	}
 }
 
-var onExitHandler = () => {
+const onExitHandler = () => {
 	taskScheduler.stopTicker();
 	mb.app.quit();
 	app.quit();
 };
+
+// This method will be called when Electron has finished initialization and is ready to create browser windows.
+app.on('ready', function () {
+	// TODO -> trigger lookup
+	// TODO -> open settings windows if user name not set
+});
 
 app.on('window-all-closed', () => console.log('Closed'));
 
