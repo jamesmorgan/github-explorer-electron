@@ -90,8 +90,11 @@ mb.on('ready', function ready() {
 		}));
 		subMenu.append(new MenuItem({
 			label: 'About',
-			role: 'about',
 			click: () => createMainWindow("about")
+		}));
+		subMenu.append(new MenuItem({
+			label: 'About Electron',
+			role: 'about'
 		}));
 		subMenu.append(new MenuItem({
 			label: 'Force Refresh',
@@ -106,7 +109,7 @@ mb.on('ready', function ready() {
 
 		menu.append(new MenuItem({type: 'separator'}));
 		menu.append(new MenuItem({
-			label: 'About',
+			label: 'Options...',
 			submenu: subMenu
 		}));
 	};
@@ -139,21 +142,28 @@ mb.on('ready', function ready() {
 			label: 'Github Home',
 			click: () => shell.openExternal(repo.html_url)
 		}));
-		subMenu.append(new MenuItem({
-			label: 'Project Home',
-			click: () => shell.openExternal(repo.homepage)
-		}));
+
+		if (repo.homepage) {
+			subMenu.append(new MenuItem({
+				label: 'Project Home',
+				click: () => shell.openExternal(repo.homepage)
+			}));
+		}
+
 		subMenu.append(new MenuItem({
 			label: 'Pulls',
 			click: () => shell.openExternal(`${repo.html_url}/pulls`)
 		}));
+
 		if (repo.has_wiki) {
 			subMenu.append(new MenuItem({
 				label: 'Project Wiki',
 				click: () => shell.openExternal(`${repo.html_url}/wiki`)
 			}));
 		}
+
 		subMenu.append(new MenuItem({type: 'separator'}));
+
 		if (repo.has_issues) {
 			subMenu.append(new MenuItem({
 				label: `Issues: ${repo.open_issues_count || 0}`,
@@ -164,8 +174,13 @@ mb.on('ready', function ready() {
 			label: `Stars: ${repo.watchers_count || 0}`,
 			click: () => shell.openExternal(`${repo.html_url}/stargazers`)
 		}));
+
+		const forksOrNetwork = (repo) => repo.forks_count > 0
+			? `Forks: ${repo.forks_count || 0}`
+			: `Network: ${repo.forks_count || 0}`;
+
 		subMenu.append(new MenuItem({
-			label: `Network: ${repo.forks_count || 0}`,
+			label: forksOrNetwork(repo),
 			click: () => shell.openExternal(`${repo.html_url}/network`)
 		}));
 
