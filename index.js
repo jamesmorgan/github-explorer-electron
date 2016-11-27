@@ -42,7 +42,7 @@ function createMainWindow(type) {
 			width: 600,
 			height: 600
 		});
-		mainWindow.loadURL(`file://${__dirname}/browser-content/index.html`);
+		mainWindow.loadURL(`file://${__dirname}/browser-content-build/index.html`);
 		mainWindow.on('closed', function onClosed() {
 			mainWindow = null; // de-reference the window for multiple windows store them in an array
 		});

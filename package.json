@@ -11,10 +11,10 @@
     "url": "http://jem-solutions.co.uk"
   },
   "scripts": {
-    "clean-ng-build": "rimraf browser-content/build/",
+    "clean-ng-build": "rimraf browser-content-build/",
     "watch": "webpack --watch --progress --profile --colors --display-error-details --display-cached",
     "build-ng2": "webpack --progress --profile --colors --display-error-details --display-cached",
-    "start": "npm run watch & electron .",
+    "start": "npm run clean-ng-build & npm run watch & electron .",
     "build": "npm run build-ng2 & npm run build-osx & npm run build-linux",
     "build-osx": "electron-packager . --overwrite --out=dist --platform=darwin --icon=./resources/tray/icon.icns --enable-logging",
     "build-linux": "electron-packager . --overwrite --out=dist --platform=linux --icon=./resources/tray/icon.icns --enable-logging"
@@ -48,21 +48,35 @@
     "reflect-metadata": "^0.1.8",
     "rxjs": "5.0.0-beta.12",
     "systemjs": "0.19.39",
-    "typings": "2.0.0",
     "zone.js": "^0.6.25"
   },
   "devDependencies": {
+    "@types/core-js": "^0.9.34",
+    "@types/jasmine": "^2.5.35",
+    "@types/node": "^6.0.45",
+    "angular2-template-loader": "^0.4.0",
+    "awesome-typescript-loader": "^2.2.4",
+    "css-loader": "^0.23.1",
     "devtron": "^1.4.0",
     "electron": "^1.4.3",
     "electron-packager": "8.3.0",
-    "@types/core-js": "^0.9.34",
-    "@types/node": "^6.0.45",
-    "@types/jasmine": "^2.5.35",
-    "rimraf": "^2.5.2",
     "es6-shim": "0.35.1",
+    "extract-text-webpack-plugin": "^1.0.1",
+    "file-loader": "^0.8.5",
+    "html-loader": "^0.4.3",
+    "html-webpack-plugin": "2.24.1",
+    "jasmine-core": "^2.4.1",
+    "null-loader": "^0.1.1",
+    "raw-loader": "0.5.1",
+    "rimraf": "2.5.4",
+    "style-loader": "^0.13.1",
     "ts-loader": "1.2.2",
+    "tslint": "4.0.2",
+    "tslint-loader": "3.2.0",
     "typescript": "^2.0.3",
-    "typings": "^0.8.1",
-    "webpack": "^1.13.0"
+    "typings": "2.0.0",
+    "webpack": "^1.13.0",
+    "webpack-dev-server": "^1.14.1",
+    "webpack-merge": "^0.14.0"
   }
 }
