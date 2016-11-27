@@ -1,11 +1,13 @@
 ##### TODO
 
+* Use Redux for app state
+
 * Update README with links to old and new
 
 * NG2 Settings Configuration
   * Basic NG2 App - DONE
-  * username
-  * API token
+  * Basic NG2 App Router - DONE
+  * Basic username OR API token
   * enable auto refresh
   * refresh interval
   * enable change notifications
