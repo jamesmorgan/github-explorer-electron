@@ -8,6 +8,11 @@ const _ = require('lodash');
 
 const {app, Menu, MenuItem} = require('electron');
 
+const {AddGithubRepos, FailureToGetGithubRepos} = require("./redux/actions");
+const {createStore}  = require("redux");
+const reducer = require("./redux/reducers");
+const store = createStore(reducer);
+
 // const app = electron.app;
 const mb = menubar({
 	tooltip: 'Github Explorer',
@@ -18,11 +23,8 @@ const mb = menubar({
 // adds debug features like hotkeys for triggering dev tools and reload
 require('electron-debug')({showDevTools: true});
 
-const ErrorCodes = require('./services/ErrorCodes');
 var GithubLookupService = require('./services/GithubLookupService');
-var github = new GithubLookupService("jamesmorgan");
-
-var Notifier = require('./services/Notifier');
+var github = new GithubLookupService();
 
 var TaskScheduler = require('./services/TaskScheduler');
 var taskScheduler = new TaskScheduler({
@@ -64,10 +66,6 @@ app.on('ready', function () {
 });
 
 app.on('window-all-closed', () => console.log('Closed'));
-
-var notification_triggers = {
-	successfully_connected: false
-};
 
 mb.on('ready', function ready() {
 	console.log('app is ready');
@@ -167,8 +165,8 @@ mb.on('ready', function ready() {
 			click: () => shell.openExternal(`${repo.html_url}/stargazers`)
 		}));
 		subMenu.append(new MenuItem({
-			label: `Forks: ${repo.forks_count || 0}`,
-			click: () => shell.openExternal(`${repo.html_url}/forks`)
+			label: `Network: ${repo.forks_count || 0}`,
+			click: () => shell.openExternal(`${repo.html_url}/network`)
 		}));
 
 		// Add the new repo and sub menu
@@ -177,8 +175,6 @@ mb.on('ready', function ready() {
 			submenu: subMenu
 		}));
 	};
-
-	let previous_repos = null;
 
 	var gitHubLookupTask = () => {
 		console.log('gitHubLookupTask() triggered');
@@ -191,7 +187,9 @@ mb.on('ready', function ready() {
 		function handleSuccess(current_repos) {
 			console.log(`Found a total of [${_.size(current_repos)}] repositories`);
 
-			var menu = new Menu();
+			store.dispatch(AddGithubRepos(current_repos));
+
+			let menu = new Menu();
 
 			// Gist, Homepage
 			addDefaultTopMenus(menu);
@@ -205,35 +203,14 @@ mb.on('ready', function ready() {
 			// Rest/enable the tray
 			mb.tray.setContextMenu(menu);
 
-			// TODO allow settings to disable notifications
-			if (!notification_triggers.successfully_connected) {
-				notification_triggers.successfully_connected = true;
-				Notifier.fireNotification({message: 'Completed github repo lookup'});
-			}
-
-			// Work out changes
-			github.determineChanges(previous_repos, current_repos)
-				.then((changes) => {
-					console.log('changes', changes);
-					_.forEach(changes, (change) => Notifier.fireNotification(change));
-					previous_repos = current_repos
-				});
-
 			return current_repos;
 		}
 
 		function handleFailure(error) {
-			// Rest success flag
-			notification_triggers.successfully_connected = false;
 
-			// Exceeded rate limits
-			if (error.type === ErrorCodes.EXCEEDED_RATE_LIMIT) {
-				Notifier.fireNotification({message: 'Rate limit exceeded!'});
-			} else {
-				Notifier.fireNotification({message: 'Failed to connect to Github'});
-			}
+			store.dispatch(FailureToGetGithubRepos(error));
 
-			var menu = new Menu();
+			let menu = new Menu();
 
 			// Adding all other menus which should be present by default
 			addDefaultBottomMenus(menu);
