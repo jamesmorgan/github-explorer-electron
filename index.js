@@ -35,12 +35,13 @@ var MenuBuilder = require('./services/MenuBuilder');
 let mainWindow;
 
 function createMainWindow(type) {
-	console.log('createMainWindow()', type);
+	console.log('createMainWindow()', type, !mainWindow);
 	if (!mainWindow) {
 		// TODO launch NG2 application and navigate to type e.g. type = about OR settings
 		mainWindow = new electron.BrowserWindow({
 			width: 600,
-			height: 600
+			height: 600,
+			alwaysOnTop: true
 		});
 		mainWindow.loadURL(`file://${__dirname}/browser-content-build/index.html`);
 		mainWindow.on('closed', function onClosed() {

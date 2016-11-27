@@ -12,8 +12,6 @@ module.exports = {
 
 	output: {
 		path: helpers.root('browser-content-build'),
-		// publicPath: '',
-		// publicPath: 'browser-content-build/',
 		filename: '[name].js',
 		sourceMapFilename: '[name].js.map',
 		chunkFilename: '[id].chunk.js'
@@ -44,16 +42,16 @@ module.exports = {
 			},
 			{
 				test: /\.css$/,
-				// exclude: ['/browser-content/app/', /dist/],
 				exclude: helpers.root('browser-content', 'app'),
-				loader: ExtractTextPlugin.extract('style', 'css?sourceMap')
+				loaders: [ExtractTextPlugin.extract({fallbackLoader: "style-loader", loader: 'css-loader'}),
+					'to-string-loader',
+					'css-loader?sourceMap']
 			},
 			{
 				test: /\.css$/,
-				// include: ['/browser-content/app/'],
 				include: helpers.root('browser-content', 'app'),
 				loader: 'raw'
-			}
+			},
 		]
 	},
 
