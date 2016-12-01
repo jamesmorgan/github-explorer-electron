@@ -11,13 +11,6 @@ const AddGithubRepos = (repos) => ({
 /**
  *
  */
-const ClearGithubRepos = (repos) => ({
-	type: types.CLEAR_GITHUB_REPOS
-});
-
-/**
- *
- */
 const FailureToGetGithubRepos = (error) => ({
 	type: types.FAILURE_TO_GET_GITHUB_REPOS,
 	error: error
@@ -25,6 +18,5 @@ const FailureToGetGithubRepos = (error) => ({
 
 module.exports = {
 	AddGithubRepos: AddGithubRepos,
-	ClearGithubRepos: ClearGithubRepos,
 	FailureToGetGithubRepos: FailureToGetGithubRepos,
 };

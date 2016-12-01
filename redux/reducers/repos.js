@@ -1,33 +1,40 @@
-const {ADD_GITHUB_REPOS, CLEAR_GITHUB_REPOS, FAILURE_TO_GET_GITHUB_REPOS} = require("../ActionTypes");
+const {ADD_GITHUB_REPOS, FAILURE_TO_GET_GITHUB_REPOS} = require("../ActionTypes");
 const ErrorCodes = require('../../services/ErrorCodes');
 const Notifier = require('../../services/Notifier');
 const settings = require('../../services/settings');
 const _ = require('lodash');
 
-const initialState = [];
+const initialState = {
+	loaded: false,
+	repos: []
+};
 
 module.exports = function repos(state = initialState, action) {
-	// console.log('action', action);
+	console.log('repos action', action.type);
 	switch (action.type) {
 		case ADD_GITHUB_REPOS:
 
 			// When we receive state for the first time, trigger notification
-			if (_.size(state) === 0 && _.size(action.repos) >= 0) {
+			// if (_.size(state.repos) === 0 && _.size(action.repos) >= 0) {
+			// 	Notifier.fireNotification({message: 'Completed github repo lookup'});
+			// }
+
+			// When we receive a success for the first time, trigger notification
+			if (state.loaded == false) {
 				Notifier.fireNotification({message: 'Completed github repo lookup'});
 			}
 
 			// Work out changes
-			determineChanges(state, action.repos).then((changes) => {
+			determineChanges(state, action).then((changes) => {
 				console.log('changes', changes);
 				_.forEach(changes, (change) => Notifier.fireNotification(change));
 			});
 
-			// Merge both new and existing states
-			return [...action.repos, ...state];
-		case CLEAR_GITHUB_REPOS:
-
-			// Return completely new state when this happens
-			return [];
+			return {
+				loaded: true,
+				// Create new instance from the new repos
+				repos: [...action.repos]
+			};
 		case FAILURE_TO_GET_GITHUB_REPOS:
 
 			// Exceeded rate limits
@@ -37,8 +44,11 @@ module.exports = function repos(state = initialState, action) {
 				Notifier.fireNotification({message: 'Failed to connect to Github'});
 			}
 
-			// Return existing state when failure happens
-			return [...state];
+			return {
+				loaded: false,
+				// Return existing state when failure happens
+				repos: [...state.repos]
+			};
 		default:
 			return state
 	}
@@ -47,14 +57,21 @@ module.exports = function repos(state = initialState, action) {
 /**
  * Determine what has changed
  *
- * @param previous_repos array of repos
- * @param current_repos array of repos
+ * @param previous_state
+ * @param current_state
  * @return {Promise.<Array>}
  */
-function determineChanges(previous_repos, current_repos) {
-	let changes = [];
+function determineChanges(previous_state, current_state) {
+
+	let previous_repos = previous_state.repos;
+	console.log(`previous state repos [${_.size(previous_state.repos)}]`);
+
+	let current_repos = current_state.repos;
+	console.log(`current state repos [${_.size(current_state.repos)}]`);
 
 	let hasPreviousState = _.size(previous_repos) !== 0;
+
+	let changes = [];
 
 	if (hasPreviousState) {
 

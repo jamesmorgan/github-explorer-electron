@@ -1,8 +1,10 @@
 const {combineReducers} = require('redux');
 const repos = require('./repos');
+// const menus = require('./menus');
 
 const rootReducer = combineReducers({
-	repos
+	repos,
+	// menus
 });
 
 module.exports = rootReducer;

@@ -2,6 +2,8 @@
 const path = require('path');
 const electron = require('electron');
 const shell = electron.shell;
+const {AsyncNodeStorage} = require("redux-persist-node-storage");
+const {persistStore, autoRehydrate} = require('redux-persist');
 
 const menubar = require('menubar');
 const _ = require('lodash');
@@ -11,7 +13,13 @@ const {app, Menu, MenuItem} = require('electron');
 const {AddGithubRepos, FailureToGetGithubRepos} = require("./redux/actions");
 const {createStore}  = require("redux");
 const reducer = require("./redux/reducers");
-const store = createStore(reducer);
+
+const store = createStore(reducer, undefined, autoRehydrate());
+
+// Persist to disk
+// persistStore(store, {storage: new AsyncNodeStorage('/tmp/storageDir')}, () => {
+// 	console.log('rehydration complete')
+// });
 
 // const app = electron.app;
 const mb = menubar({
@@ -77,15 +85,14 @@ mb.on('ready', function ready() {
 	mb.tray.setContextMenu(menu);
 
 	var menuBuilder = new MenuBuilder({
-		tray: mb.tray
+		tray: mb.tray,
+		store: store
 	});
 
 	var addDefaultBottomMenus = (menu) => {
 		var subMenu = new Menu();
 		subMenu.append(new MenuItem({
 			label: 'Configure',
-			role: 'help',
-			accelerator: 'CmdOrCtrl+H',
 			click: () => createMainWindow("settings")
 		}));
 		subMenu.append(new MenuItem({
@@ -98,8 +105,6 @@ mb.on('ready', function ready() {
 		}));
 		subMenu.append(new MenuItem({
 			label: 'Force Refresh',
-			role: 'reload',
-			accelerator: 'CmdOrCtrl+R',
 			click: () => gitHubLookupTask()
 		}));
 		subMenu.append(new MenuItem({
@@ -127,7 +132,7 @@ mb.on('ready', function ready() {
 	};
 
 	var addRepoMenu = (menu, repo) => {
-		console.log('Adding repo menu item for', repo.name);
+		// console.log('Adding repo menu item for', repo.name);
 
 		var subMenu = new Menu();
 
