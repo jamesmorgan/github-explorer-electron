@@ -7,7 +7,8 @@ class Notifier {
 	static fireNotification(messageOptions) {
 		_.defaults(messageOptions, {
 			title: 'Github Explorer',
-			icon: path.join(__dirname, './resources/tray/icon.png'), // Absolute path (doesn't work on balloons) ... ?
+			// FIXME Absolute path (doesn't work on balloons) ... ?
+			icon: path.join(__dirname, './resources/tray/icon.png'),
 		});
 
 		if (_.has(messageOptions, 'link_url')) {

@@ -13,3 +13,7 @@ import 'rxjs';
 
 // Other vendors for example jQuery, Lodash or Bootstrap
 // You can import js, ts, css, sass, ...
+
+
+// Include bootstrap 4 - is this the best way...?
+import '../node_modules/bootstrap/dist/css/bootstrap.css'

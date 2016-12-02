@@ -3,6 +3,13 @@ const types = require("../ActionTypes");
 /**
  *
  */
+const ForceRefreshGithubRepos = (repos) => ({
+	type: types.FORCE_REFRESH_GITHUB_REPOS,
+	repos: repos
+});
+/**
+ *
+ */
 const AddGithubRepos = (repos) => ({
 	type: types.ADD_GITHUB_REPOS,
 	repos: repos
@@ -18,5 +25,6 @@ const FailureToGetGithubRepos = (error) => ({
 
 module.exports = {
 	AddGithubRepos: AddGithubRepos,
+	ForceRefreshGithubRepos: ForceRefreshGithubRepos,
 	FailureToGetGithubRepos: FailureToGetGithubRepos,
 };

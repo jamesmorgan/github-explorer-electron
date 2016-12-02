@@ -1,4 +1,4 @@
-const {ADD_GITHUB_REPOS, FAILURE_TO_GET_GITHUB_REPOS} = require("../ActionTypes");
+const {ADD_GITHUB_REPOS, FAILURE_TO_GET_GITHUB_REPOS, FORCE_REFRESH_GITHUB_REPOS} = require("../ActionTypes");
 const ErrorCodes = require('../../services/ErrorCodes');
 const Notifier = require('../../services/Notifier');
 const settings = require('../../services/settings');
@@ -12,12 +12,21 @@ const initialState = {
 module.exports = function repos(state = initialState, action) {
 	console.log('repos action', action.type);
 	switch (action.type) {
-		case ADD_GITHUB_REPOS:
+		case FORCE_REFRESH_GITHUB_REPOS:
 
-			// When we receive state for the first time, trigger notification
-			// if (_.size(state.repos) === 0 && _.size(action.repos) >= 0) {
-			// 	Notifier.fireNotification({message: 'Completed github repo lookup'});
-			// }
+			Notifier.fireNotification({message: 'Github repos refreshed'});
+
+			// Work out changes
+			determineChanges(state, action).then((changes) => {
+				console.log('changes', changes);
+				_.forEach(changes, (change) => Notifier.fireNotification(change));
+			});
+
+			return {
+				loaded: true,
+				repos: [...action.repos] // Create new instance from the new repos
+			};
+		case ADD_GITHUB_REPOS:
 
 			// When we receive a success for the first time, trigger notification
 			if (state.loaded == false) {
@@ -32,8 +41,7 @@ module.exports = function repos(state = initialState, action) {
 
 			return {
 				loaded: true,
-				// Create new instance from the new repos
-				repos: [...action.repos]
+				repos: [...action.repos] // Create new instance from the new repos
 			};
 		case FAILURE_TO_GET_GITHUB_REPOS:
 
@@ -46,11 +54,10 @@ module.exports = function repos(state = initialState, action) {
 
 			return {
 				loaded: false,
-				// Return existing state when failure happens
-				repos: [...state.repos]
+				repos: [...state.repos] // Return existing state when failure happens
 			};
 		default:
-			return state
+			return _.cloneDeep(state);
 	}
 };
 

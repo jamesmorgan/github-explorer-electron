@@ -1,23 +1,32 @@
 ##### TODO
 
-* Use Redux for app state
+* Use Redux for app state - DONE
 
-* Update README with links to old and new
-
-* NG2 Settings Configuration
+* NG2 Settings App
   * Basic NG2 App - DONE
   * Basic NG2 App Router - DONE
-  * Basic username OR API token
-  * enable auto refresh
-  * refresh interval
-  * enable change notifications
+  * bootstrap 4
+  * Basic username 
+  * API token (provide link to github to create one)
+  * Toggle auto refresh
+  * Refresh interval - dont allow any lower than 60 per minute
+  * Enable change notifications - on/off
+    * Allow customisation of which notification you get - default all
+  * Allow customisation of what repos you see
+    * Removal of ones you are not interesting in
+  * Toggle always open config with dev tools
 
 * Application logging
   * Log to file
   * Configuration options
   * Link to log from application
+  * Application crash logging ... ?
   
+* Blog post/medium post on the project
+* Update README with links to old and new
+
 * About popup window
+  * Links to website
 
 * Linux build
   * Test & build distributable

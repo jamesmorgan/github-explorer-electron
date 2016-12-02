@@ -2,24 +2,17 @@
 const path = require('path');
 const electron = require('electron');
 const shell = electron.shell;
-const {AsyncNodeStorage} = require("redux-persist-node-storage");
-const {persistStore, autoRehydrate} = require('redux-persist');
 
 const menubar = require('menubar');
 const _ = require('lodash');
 
 const {app, Menu, MenuItem} = require('electron');
 
-const {AddGithubRepos, FailureToGetGithubRepos} = require("./redux/actions");
+const {AddGithubRepos, FailureToGetGithubRepos, ForceRefreshGithubRepos} = require("./redux/actions");
 const {createStore}  = require("redux");
 const reducer = require("./redux/reducers");
 
-const store = createStore(reducer, undefined, autoRehydrate());
-
-// Persist to disk
-// persistStore(store, {storage: new AsyncNodeStorage('/tmp/storageDir')}, () => {
-// 	console.log('rehydration complete')
-// });
+const store = createStore(reducer);
 
 // const app = electron.app;
 const mb = menubar({
@@ -28,18 +21,17 @@ const mb = menubar({
 	showOnRightClick: false
 });
 
+// TODO setting to always open config with dev tools
 // adds debug features like hotkeys for triggering dev tools and reload
-require('electron-debug')({showDevTools: true});
+// require('electron-debug')({showDevTools: true});
 
-var GithubLookupService = require('./services/GithubLookupService');
-var github = new GithubLookupService();
+let GithubLookupService = require('./services/GithubLookupService');
+const github = new GithubLookupService();
 
-var TaskScheduler = require('./services/TaskScheduler');
-var taskScheduler = new TaskScheduler({
+let TaskScheduler = require('./services/TaskScheduler');
+const taskScheduler = new TaskScheduler({
 	// refresh_interval_in_sec: 30 // once every 30s
 });
-
-var MenuBuilder = require('./services/MenuBuilder');
 
 // Keep a global reference of the window object, if you don't, the window will be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
@@ -78,19 +70,14 @@ app.on('window-all-closed', () => console.log('Closed'));
 mb.on('ready', function ready() {
 	console.log('app is ready');
 
-	var menu = new Menu();
+	let menu = new Menu();
 	menu.append(new MenuItem({
 		label: 'Looking up repos...'
 	}));
 	mb.tray.setContextMenu(menu);
 
-	var menuBuilder = new MenuBuilder({
-		tray: mb.tray,
-		store: store
-	});
-
-	var addDefaultBottomMenus = (menu) => {
-		var subMenu = new Menu();
+	const addDefaultBottomMenus = (menu) => {
+		let subMenu = new Menu();
 		subMenu.append(new MenuItem({
 			label: 'Configure',
 			click: () => createMainWindow("settings")
@@ -105,7 +92,7 @@ mb.on('ready', function ready() {
 		}));
 		subMenu.append(new MenuItem({
 			label: 'Force Refresh',
-			click: () => gitHubLookupTask()
+			click: () => gitHubLookupTask(true)
 		}));
 		subMenu.append(new MenuItem({
 			label: 'Quit',
@@ -119,7 +106,7 @@ mb.on('ready', function ready() {
 		}));
 	};
 
-	var addDefaultTopMenus = (menu) => {
+	const addDefaultTopMenus = (menu) => {
 		menu.append(new MenuItem({
 			label: 'Github Home',
 			click: () => shell.openExternal(`https://github.com/${github.username}`)
@@ -131,10 +118,10 @@ mb.on('ready', function ready() {
 		menu.append(new MenuItem({type: 'separator'}));
 	};
 
-	var addRepoMenu = (menu, repo) => {
+	const addRepoMenu = (menu, repo) => {
 		// console.log('Adding repo menu item for', repo.name);
 
-		var subMenu = new Menu();
+		let subMenu = new Menu();
 
 		// TODO add config option to display description in menu-bar
 		if (repo.description) {
@@ -196,7 +183,7 @@ mb.on('ready', function ready() {
 		}));
 	};
 
-	var gitHubLookupTask = () => {
+	const gitHubLookupTask = (forceRefresh) => {
 		console.log('gitHubLookupTask() triggered');
 
 		/** Attempt to hit github */
@@ -207,7 +194,11 @@ mb.on('ready', function ready() {
 		function handleSuccess(current_repos) {
 			console.log(`Found a total of [${_.size(current_repos)}] repositories`);
 
-			store.dispatch(AddGithubRepos(current_repos));
+			if (forceRefresh) {
+				store.dispatch(ForceRefreshGithubRepos(current_repos));
+			} else {
+				store.dispatch(AddGithubRepos(current_repos));
+			}
 
 			let menu = new Menu();
 
@@ -243,7 +234,7 @@ mb.on('ready', function ready() {
 		}
 	};
 
-	var triggerGithubScheduler = function () {
+	const triggerGithubScheduler = function () {
 		return taskScheduler.startTask(gitHubLookupTask)
 	};
 
@@ -251,5 +242,7 @@ mb.on('ready', function ready() {
 	let shouldAutoRefresh = true;
 	if (shouldAutoRefresh) {
 		triggerGithubScheduler();
+	} else {
+		gitHubLookupTask()
 	}
 });
